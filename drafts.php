@@ -24,7 +24,7 @@ add_action(
 			'drafts',
 			sprintf(
 				'<span><span class="dashicons dashicons-edit" style="padding-right: 10px"></span>%s</span>',
-				esc_attr__( 'Recent Drafts', 'draft' )
+				esc_attr__( 'Recent Drafts', 'drafts' )
 			),
 			__NAMESPACE__ . '\\dashboard_widget'
 		);
