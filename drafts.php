@@ -6,10 +6,10 @@
  * Author:      Brad Parbs
  * Author URI:  https://bradparbs.com/
  * License:     GPLv2
- * Text Domain: draft
+ * Text Domain: drafts
  * Domain Path: /lang/
  *
- * @package modified
+ * @package drafts
  */
 
 namespace Drafts;
@@ -21,7 +21,7 @@ add_action(
 	'wp_dashboard_setup',
 	function () {
 		wp_add_dashboard_widget(
-			'draft',
+			'drafts',
 			sprintf(
 				'<span><span class="dashicons dashicons-edit" style="padding-right: 10px"></span>%s</span>',
 				esc_attr__( 'Recent Drafts', 'draft' )
