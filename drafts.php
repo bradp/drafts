@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Drafts
  * Description: Quickly and easily view the last draft posts.
- * Version:     1.0.0
+ * Version:     1.1.0
  * Author:      Brad Parbs
  * Author URI:  https://bradparbs.com/
  * License:     GPLv2
@@ -16,50 +16,37 @@ namespace Drafts;
 
 use WP_Query;
 
-// Add new dashboard widget with list of draft posts.
-add_action(
-	'wp_dashboard_setup',
-	function () {
-		wp_add_dashboard_widget(
-			'drafts',
-			sprintf(
-				'<span><span class="dashicons dashicons-edit" style="padding-right: 10px"></span>%s</span>',
-				esc_attr__( 'Recent Drafts', 'drafts' )
-			),
-			__NAMESPACE__ . '\\dashboard_widget'
-		);
-	}
-);
+add_action( 'wp_dashboard_setup', __NAMESPACE__ . '\\add_dashboard_widget' );
+
+/**
+ * Add new dashboard widget with list of draft posts.
+ */
+function add_dashboard_widget() {
+	$name = sprintf(
+		'<span><span class="dashicons %s" style="padding-right: 10px"></span>%s</span>',
+		apply_filters( 'drafts_widget_icon', 'dashicons-edit' ),
+		apply_filters( 'drafts_widget_title', esc_attr__( 'Recent Drafts', 'drafts' ) )
+	);
+
+	wp_add_dashboard_widget( 'drafts', $name, __NAMESPACE__ . '\\dashboard_widget' );
+}
 
 /**
  * Add dashboard widget for draft posts.
  */
 function dashboard_widget() {
-	$posts = new WP_Query(
-		[
-			'post_type'      => get_post_types(),
-			'orderby'        => 'modified',
-			'post_status'    => 'draft',
-			'order'          => 'DESC',
-			'posts_per_page' => 25,
-			'no_found_rows'  => true,
-		]
-	);
+	$post_types = apply_filters( 'drafts_post_types_to_show', get_post_types() );
+	$query_args = apply_filters( 'drafts_widget_query_args', [
+		'post_type'      => $post_types,
+		'post_status'    => 'draft',
+		'orderby'        => 'date',
+		'order'          => 'ASC',
+		'posts_per_page' => 25,
+		'no_found_rows'  => true,
+	] );
 
-	$drafts = [];
-
-	if ( $posts->have_posts() ) {
-		while ( $posts->have_posts() ) {
-			$posts->the_post();
-
-			$drafts[] = [
-				'ID'      => get_the_ID(),
-				'title'   => get_the_title(),
-				'date'    => gmdate( 'F j, g:ia', get_the_time( 'U' ) ),
-				'preview' => get_preview_post_link(),
-			];
-		}
-	}
+	$posts     = new WP_Query( $query_args );
+	$draft = get_draft_posts( $posts );
 
 	printf(
 		'<div id="draft-posts-widget-wrapper">
@@ -67,9 +54,40 @@ function dashboard_widget() {
 				<ul>%s</ul>
 			</div>
 		</div>',
-		display_draft_in_widget( $drafts ) // phpcs:ignore
+		display_draft_in_widget( $draft ) // phpcs:ignore
 	);
 }
+
+/**
+ * Get the draft posts to display in the dashboard widget.
+ *
+ * @param WP_Query $posts WP_Query object.
+ *
+ * @return array Array of draft posts.
+ */
+function get_draft_posts( $posts ) {
+	$draft = [];
+
+	if ( $posts->have_posts() ) {
+		while ( $posts->have_posts() ) {
+			$posts->the_post();
+
+			$add_to_draft = apply_filters( 'drafts_show_in_widget', [
+				'ID'      => get_the_ID(),
+				'title'   => get_the_title(),
+				'date'    => gmdate( 'F j, g:ia', get_the_time( 'U' ) ),
+				'preview' => get_preview_post_link(),
+			] );
+
+			if ( isset( $add_to_draft ) ) {
+				$draft[] = $add_to_draft;
+			}
+		}
+	}
+
+	return $draft;
+}
+
 /**
  * Display draft posts in widget.
  *
